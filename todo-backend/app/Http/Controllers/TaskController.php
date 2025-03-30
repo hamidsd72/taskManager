@@ -7,9 +7,19 @@ use Illuminate\Http\Request;
 
 class TaskController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Task::all());
+        $query = Task::query();
+
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->has('search')) {
+            $query->where('title', 'like', '%' . $request->search . '%');
+        }
+
+        return response()->json($query->get());
     }
 
     public function store(Request $request)
@@ -26,6 +36,8 @@ class TaskController extends Controller
     {
         Task::findOrFail($task)->update($request->validate([
             'status'    => 'in:pending,in-progress,completed',
+            'title'     => 'required|string|max:255',
+            'due_date'  => 'nullable|date',
         ]));
 
         return response()->json(true);
