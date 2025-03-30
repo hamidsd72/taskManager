@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { DatePickerProps, Modal, Card, Button, Input, Table, Select } from "antd";
-import deleteImage from './delete-forever.png';
-import editImage from './edit.png';
-import { DatePicker, Space } from 'antd';
-import dayjs from 'dayjs';
+import { DatePickerProps, Card } from "antd";
+import TaskTable from "../Components/TaskTable";
+import AlertModal from "../Components/AlertModal";
+import EditModal from "../Components/EditModal";
+import AddNewTask from "../Components/AddNewTask";
+import SearchTask from "../Components/SearchTask";
 
 const TodoApp = () => {
     const [tasks, setTasks] = useState([]);
@@ -15,13 +16,10 @@ const TodoApp = () => {
     const [filter, setFilter] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isModalUpdateOpen, setIsModalUpdateOpen] = useState(false);
-    const dateFormat = 'YYYY/MM/DD';
     const onChangeDate: DatePickerProps['onChange'] = (date, dateString) => {
         console.log(dateString, date);
         setEditTask({ ...editTask, due_date: dateString });
     };
-    const { Option } = Select;
-
 
     useEffect(() => {
         fetchTasks();
@@ -54,9 +52,10 @@ const TodoApp = () => {
             }
         }
 
-        if (search) {
-            url += `search=${search}`;
+        if ( ! filter && search) {
+            url += `?search=${search}`;
         }
+        console.log(url)
         const response = await axios.get(url);
         setTasks(response.data);
     };
@@ -99,82 +98,45 @@ const TodoApp = () => {
 
     return (
         <div style={{paddingTop: "40px"}}>
-            <Modal title="Form validation" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
-                <p style={{ color: "#f5222d" }}>Title is required</p>
-            </Modal>
 
-            <Modal title="Task update" open={isModalUpdateOpen} onOk={handleUpdateTask}  onCancel={handleUpdateCancel}>
-                <div>
-                    <span>Change title</span>
-                    <Input
-                        type="text"
-                        value={editTask.title}
-                        onChange={(e) => setEditTask({ ...editTask, title: e.target.value })}
-                    />
-                </div>
+            <AlertModal
+                isModalOpen={isModalOpen}
+                handleOk={handleOk}
+                handleCancel={handleCancel}
+            />
 
-                <div style={{paddingTop: "10px"}}>
-                    <span>Change due date </span>
-                    <br/>
-                    <DatePicker onChange={onChangeDate} defaultValue={editTask.due_date ? dayjs(editTask.due_date, dateFormat) : null} format={dateFormat} />
-                </div>
-            </Modal>
+            <EditModal
+                isModalOpen={isModalUpdateOpen}
+                handleOk={handleUpdateTask}
+                handleCancel={handleUpdateCancel}
+                editTask={editTask}
+                setEditTask={setEditTask}
+                onChangeDate={onChangeDate}
+            />
 
             <Card title="Task Management" variant="borderless" style={{ width: 600, margin: "auto" }}>
 
-                <div style={{ paddingBottom: "10px" }}>
-                    <span>Add new task</span>
-                    <div className="flex gap-2 mb-4" style={{ display: "flex" }}>
-                        <Input value={newTask} data-testid="input_new_task"
-                            onChange={(e) => { setNewTask(e.target.value); setInputTextError(""); }}
-                            status={inputTextError.length ? 'error' : ''}
-                            placeholder={inputTextError} style={{ borderRadius: "6px 0 0 6px" }}/>
-                        <Button type="primary" onClick={addTask} style={{ borderRadius: "0 6px 6px 0" }} data-testid="add_task">Add task</Button>
-                    </div>
-                </div>
-                
-                <div style={{ paddingBottom: "10px" }}>
-                    <span>Search in tasks</span>
-                    <div className="flex gap-2 mb-4" style={{ display: "flex" }}>
-                        <Input
-                            type="text"
-                            placeholder="Search tasks..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
+                <AddNewTask
+                    newTask={newTask}
+                    setNewTask={setNewTask}
+                    setInputTextError={setInputTextError}
+                    inputTextError={inputTextError}
+                    addTask={addTask}
+                />
 
-                        <Select value={filter} onChange={(value) => setFilter(value)} >
-                            <Option value="">Show all status</Option>
-                            <Option value="pending">Pending</Option>
-                            <Option value="in-progress">In Progress</Option>
-                            <Option value="completed">Completed</Option>
-                        </Select>
-                    </div>
-                </div>
+                <SearchTask
+                    search={search}
+                    setSearch={setSearch}
+                    filter={filter}
+                    setFilter={setFilter}
+                />
                 
-                <Table dataSource={tasks} rowKey="id" pagination={false}>
-                    <Table.Column title="Title" dataIndex="title" key="title"/>
-                    <Table.Column title="Due date" dataIndex="due_date" key="due_date"/>
-                    <Table.Column title="Status" key="status" render={(task) => (
-                        <Select value={task.status} onChange={(value) => updateTaskStatus(task.id, value, task.title)}>
-                            <Option value="pending">Pending</Option>
-                            <Option value="in-progress">In Progress</Option>
-                            <Option value="completed">Completed</Option>
-                        </Select>
-                    )} />
-                    <Table.Column title="Edit title" key="actions" render={(task) => (
-                        <Button color="cyan" variant="outlined" onClick={() => handleEditTask(task)}>
-                            <img width="16" src={editImage} alt="edit-task" />
-                        </Button>
-                    )} />
-
-                    <Table.Column title="Delete" key="actions" render={(task) => (
-                        <Button onClick={() => deleteTask(task.id)} danger>
-                            <img width="16" src={deleteImage} alt="delete-forever" />
-                        </Button>
-                    )} />
-                    
-                </Table>
+                <TaskTable
+                    tasks={tasks}
+                    updateTaskStatus={updateTaskStatus}
+                    handleEditTask={handleEditTask}
+                    deleteTask={deleteTask}
+                />
 
             </Card>
 
